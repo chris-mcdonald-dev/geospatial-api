@@ -1,0 +1,15 @@
+fastapi[standard]
+uvicorn[standard]==0.27.0
+gunicorn==21.2.0
+pandas
+fastparquet
+pyarrow
+geopandas
+sqlalchemy
+geoalchemy2
+alembic
+pydantic
+pydantic-settings
+python-dotenv
+geojson
+psycopg2-binary
