@@ -2,7 +2,7 @@ from fastapi import Depends
 from app.db import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
-from app import models
+from app.models import Link, SpeedRecord
 from geoalchemy2.functions import ST_AsGeoJSON
 import json
 from typing import List, Dict, Any
@@ -20,12 +20,12 @@ class PatternService:
 
         daily_average_speed = (
             select(
-                models.SpeedRecord.link_id,
-                models.SpeedRecord.day_of_week,
-                func.avg(models.SpeedRecord.average_speed).label('average_speed')
+                SpeedRecord.link_id,
+                SpeedRecord.day_of_week,
+                func.avg(SpeedRecord.average_speed).label('average_speed')
             )
-            .where(models.SpeedRecord.period == target_period)
-            .group_by(models.SpeedRecord.link_id, models.SpeedRecord.day_of_week)
+            .where(SpeedRecord.period == target_period)
+            .group_by(SpeedRecord.link_id, SpeedRecord.day_of_week)
             .subquery("daily_average_speed") # Name the first CTE
         )
 
@@ -43,13 +43,13 @@ class PatternService:
 
         # Match it back up with the Link table
         stmt = select(
-            models.Link.link_id,
-            models.Link.road_name,
-            ST_AsGeoJSON(models.Link.geometry).label('geometry'),
-            models.Link.length,
+            Link.link_id,
+            Link.road_name,
+            ST_AsGeoJSON(Link.geometry).label('geometry'),
+            Link.length,
             amount_of_slow_days.c.slow_day_count
         ).join(
-            amount_of_slow_days, models.Link.link_id == amount_of_slow_days.c.link_id
+            amount_of_slow_days, Link.link_id == amount_of_slow_days.c.link_id
         )
         
         results = self.db.execute(stmt).all()

@@ -2,7 +2,7 @@ from fastapi import Depends
 from app.db import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
-from app import models
+from app.models import Link, SpeedRecord
 from geoalchemy2.functions import ST_AsGeoJSON, ST_Intersects
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Polygon
@@ -20,22 +20,22 @@ class AggregateService:
         target_period: int
     ) -> Optional[Dict[str, Any]]:
         stmt = select(
-            models.Link.link_id,
-            models.Link.road_name,
-            models.Link.length,
-            ST_AsGeoJSON(models.Link.geometry).label('geometry'),
-            func.avg(models.SpeedRecord.average_speed).label('average_speed')
+            Link.link_id,
+            Link.road_name,
+            Link.length,
+            ST_AsGeoJSON(Link.geometry).label('geometry'),
+            func.avg(SpeedRecord.average_speed).label('average_speed')
         ).join(
-            models.SpeedRecord, models.Link.link_id == models.SpeedRecord.link_id
+            SpeedRecord, Link.link_id == SpeedRecord.link_id
         ).where(
-            models.Link.link_id == link_id,
-            models.SpeedRecord.day_of_week == target_day_of_week,
-            models.SpeedRecord.period == target_period
+            Link.link_id == link_id,
+            SpeedRecord.day_of_week == target_day_of_week,
+            SpeedRecord.period == target_period
         ).group_by(
-            models.Link.link_id,
-            models.Link.road_name,
-            models.Link.length,
-            models.Link.geometry
+            Link.link_id,
+            Link.road_name,
+            Link.length,
+            Link.geometry
         )
         result = self.db.execute(stmt).first()
 
@@ -57,21 +57,21 @@ class AggregateService:
         target_period: int
     ) -> List[Dict[str, Any]]:
         stmt = select(
-            models.Link.link_id,
-            models.Link.road_name,
-            models.Link.length,
-            ST_AsGeoJSON(models.Link.geometry).label('geometry'),
-            func.avg(models.SpeedRecord.average_speed).label('average_speed')
+            Link.link_id,
+            Link.road_name,
+            Link.length,
+            ST_AsGeoJSON(Link.geometry).label('geometry'),
+            func.avg(SpeedRecord.average_speed).label('average_speed')
         ).join(
-            models.SpeedRecord, models.Link.link_id == models.SpeedRecord.link_id
+            SpeedRecord, Link.link_id == SpeedRecord.link_id
         ).where(
-            models.SpeedRecord.day_of_week == target_day_of_week,
-            models.SpeedRecord.period == target_period
+            SpeedRecord.day_of_week == target_day_of_week,
+            SpeedRecord.period == target_period
         ).group_by(
-            models.Link.link_id,
-            models.Link.road_name,
-            models.Link.length,
-            models.Link.geometry
+            Link.link_id,
+            Link.road_name,
+            Link.length,
+            Link.geometry
         )
         results = self.db.execute(stmt).all()
 
@@ -110,19 +110,19 @@ class AggregateService:
 
         # Query the database for links within the bounding box
         stmt = select(
-            models.Link.link_id,
-            models.Link.road_name,
-            ST_AsGeoJSON(models.Link.geometry).label('geometry'),
-            models.Link.length,
-            func.avg(models.SpeedRecord.average_speed).label('average_speed')
+            Link.link_id,
+            Link.road_name,
+            ST_AsGeoJSON(Link.geometry).label('geometry'),
+            Link.length,
+            func.avg(SpeedRecord.average_speed).label('average_speed')
         ).join(
-            models.SpeedRecord, models.Link.link_id == models.SpeedRecord.link_id
+            SpeedRecord, Link.link_id == SpeedRecord.link_id
         ).where(
-            models.Link.geometry.ST_Intersects(bbox_geometry), # Use geoalchemy to check if the link geometry intersects with the bounding box
-            models.SpeedRecord.day_of_week == target_day_of_week,
-            models.SpeedRecord.period == target_period
+            Link.geometry.ST_Intersects(bbox_geometry), # Use geoalchemy to check if the link geometry intersects with the bounding box
+            SpeedRecord.day_of_week == target_day_of_week,
+            SpeedRecord.period == target_period
         ).group_by(
-            models.Link.link_id, models.Link.road_name, models.Link.geometry, models.Link.length
+            Link.link_id, Link.road_name, Link.geometry, Link.length
         )
         
         results = self.db.execute(stmt).all()
